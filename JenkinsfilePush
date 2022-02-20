@@ -1,0 +1,33 @@
+node {
+  
+        //once you sign up for Docker hub, use that user_id here : your_docker_user_id/mypythonapp
+    def registryProjet = "trimed/jenkins"
+        //- update your credentials ID after creating credentials for connecting to Docker Hub
+    def registryCredential = '8bd98fd7-1f96-4a73-98c8-c71992d076fe'
+    
+    def IMAGE="${registryProjet}:version-${env.BUILD_ID}"
+
+    stage('Clone') {
+	    git 'https://github.com/TrimedGit/jenkins-build-docker.git'
+    }
+    
+    def img = stage('Build') {
+        // img = docker.build registryProjet
+	    docker.build("$IMAGE", '.')
+    }
+   
+    stage('Run') {
+    	img.withRun("--name run-$BUILD_ID -p 80:80") { c ->
+        	sh 'curl localhost'
+    	}
+    }
+    
+    stage('Push') {
+        //You need not specify the registry when it is hub.docker.com.
+	    docker.withRegistry('', registryCredential){
+    		//img.push 'latest'
+    	    img.push()
+	    }
+    }
+    
+}
